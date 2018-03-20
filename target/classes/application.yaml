@@ -1,0 +1,20 @@
+server: 
+  port: 8069
+
+spring:
+    profiles:
+     active: local
+     
+camel:
+  springboot: 
+    main-run-controller: true
+   
+#application properties
+
+route:
+  recursive: false
+  fileTypeFilter: officeDocumentFilter
+ 
+file-types:
+  office-document: doc, docx, docm, xls, xlsm, xlsx, potm, ppt, pptx, csv
+  video: mp4, mov, vob

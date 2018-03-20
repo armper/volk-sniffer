@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Implementation-Title: Volk Sniffer
+Implementation-Version: 1.0.0
+Built-By: aperea
+Implementation-Vendor-Id: com.pereatech.volk
+Build-Jdk: 1.8.0_161
+Implementation-URL: http://projects.spring.io/spring-boot/sniffer/
+Created-By: Maven Integration for Eclipse
+Implementation-Vendor: Pivotal Software, Inc.
+
