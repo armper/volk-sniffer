@@ -1,5 +1,6 @@
 package com.pereatech.volk.sniffer.model;
 
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,7 +14,7 @@ import lombok.ToString;
 @ToString
 public class SearchFile {
 
-	protected Object id;
+	protected String id;
 	
 	protected SearchUser createdBy;
 

@@ -1,5 +1,6 @@
 package com.pereatech.volk.sniffer.model;
 
+import java.math.BigInteger;
 import java.util.UUID;
 
 import lombok.Getter;
@@ -11,7 +12,7 @@ import lombok.ToString;
 @ToString
 public class SearchUser {
 
-	private Object id;
+	protected String id;
 	
 	private String name, domainName;
 }

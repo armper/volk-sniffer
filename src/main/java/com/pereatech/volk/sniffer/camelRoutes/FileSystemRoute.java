@@ -48,8 +48,8 @@ public class FileSystemRoute extends RouteBuilder {
 
 		try {
 			log.info("Finding all shared drives...");
-			SmbFile file = new SmbFile("smb://AMER;devsu:C$C123$dev@cscgsxaus1v15/");
-			// SmbFile file = new SmbFile("smb://alper:ceuVceth!1@FRED/");
+//			SmbFile file = new SmbFile("smb://AMER;devsu:C$C123$dev@cscgsxaus1v15/");
+			 SmbFile file = new SmbFile("smb://alper:ceuVceth!1@FRED/");
 			domains = file.listFiles();
 
 		} catch (SmbException e1) {
@@ -84,7 +84,7 @@ public class FileSystemRoute extends RouteBuilder {
 			String routeId = UUID.randomUUID().toString();
 
 			// from("smb://AMER;devsu:C$C123$dev@cscgsxaus1v15/public/amertest").to("file://target/recieved-files");
-			from(d + "?password=C$C123$dev&idempotent=true&filter=#{{route.fileTypeFilter}}&recursive={{route.recursive}}&noop=true")
+			from(d + "?password=ceuVceth!1&idempotent=true&filter=#{{route.fileTypeFilter}}&recursive={{route.recursive}}&noop=true")
 					.routeId("SMB_route_" + routeId).streamCaching().to("file://target/recieved-files/" + routeId)
 					.process(new Processor() {
 
@@ -116,8 +116,8 @@ public class FileSystemRoute extends RouteBuilder {
 								}
 							}
 							
-							createdBy.setName("Fred");
-							createdBy.setDomainName("mydomain");
+//							createdBy.setName("Fred");
+//							createdBy.setDomainName("mydomain");
 
 							Long lastModified = body.getFile().getLastModified();
 
