@@ -1,6 +1,8 @@
 package com.pereatech.volk.sniffer.model;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import lombok.Getter;
@@ -15,4 +17,7 @@ public class SearchUser {
 	protected String id;
 	
 	private String name, domainName;
+	
+	private List<SearchFile> searchFiles = new ArrayList<>();
+
 }

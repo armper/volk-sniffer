@@ -8,20 +8,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.pereatech.volk.sniffer.model.SearchFile;
+import com.pereatech.volk.sniffer.model.SearchUser;
 
 import lombok.extern.log4j.Log4j2;
 
-@Log4j2
 @Service
-public class SearchFileRestRepository {
+public class SearchUserRestRepository {
 	private RestTemplate restTemplate = new RestTemplate();
-	private URI fooResourceUrl = URI.create("http://localhost:8091/searchfile");
+	private URI resourceUrl = URI.create("http://localhost:8091/searchuser");
 
-	public SearchFile save(SearchFile searchFile) {
-		log.debug(searchFile);
-		HttpEntity<SearchFile> httpEntity = new HttpEntity<>(searchFile);
-		return restTemplate.postForObject(fooResourceUrl, httpEntity, SearchFile.class);
+	public SearchUser save(SearchUser searchUser) {
+		HttpEntity<SearchUser> httpEntity = new HttpEntity<>(searchUser);
+		return restTemplate.postForObject(resourceUrl, httpEntity, SearchUser.class);
 	}
-
-
 }

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 
 import com.pereatech.volk.sniffer.model.SearchFile;
 import com.pereatech.volk.sniffer.model.SearchUser;
-import com.pereatech.volk.sniffer.rest.SearchFileRestRepository;
+import com.pereatech.volk.sniffer.rest.SearchUserRestRepository;
 import com.pereatech.volk.sniffer.service.MsOfficeExtractor;
 import jcifs.smb.ACE;
 import jcifs.smb.SID;
@@ -33,12 +33,12 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 @Component
 public class FileSystemRoute extends RouteBuilder {
-	private final SearchFileRestRepository searchFileRepository;
+	private final SearchUserRestRepository searchUserRepository;
 
 	@Autowired
-	public FileSystemRoute(SearchFileRestRepository searchFileRepository) {
+	public FileSystemRoute(SearchUserRestRepository searchUserRepository) {
 		super();
-		this.searchFileRepository = searchFileRepository;
+		this.searchUserRepository = searchUserRepository;
 	}
 
 	@Override
@@ -48,8 +48,8 @@ public class FileSystemRoute extends RouteBuilder {
 
 		try {
 			log.info("Finding all shared drives...");
-			SmbFile file = new SmbFile("smb://AMER;devsu:C$C123$dev@cscgsxaus1v15/");
-//			 SmbFile file = new SmbFile("smb://alper:ceuVceth!1@FRED/");
+			// SmbFile file = new SmbFile("smb://AMER;devsu:C$C123$dev@cscgsxaus1v15/");
+			SmbFile file = new SmbFile("smb://alper:ceuVceth!1@FRED/");
 			domains = file.listFiles();
 
 		} catch (SmbException e1) {
@@ -84,7 +84,7 @@ public class FileSystemRoute extends RouteBuilder {
 			String routeId = UUID.randomUUID().toString();
 
 			// from("smb://AMER;devsu:C$C123$dev@cscgsxaus1v15/public/amertest").to("file://target/recieved-files");
-			from(d + "?password=C$C123$dev&idempotent=true&filter=#{{route.fileTypeFilter}}&recursive={{route.recursive}}&noop=true")
+			from(d + "?password=ceuVceth!1&idempotent=true&filter=#{{route.fileTypeFilter}}&recursive={{route.recursive}}&noop=true")
 					.routeId("SMB_route_" + routeId).streamCaching().to("file://target/recieved-files/" + routeId)
 					.process(new Processor() {
 
@@ -115,9 +115,6 @@ public class FileSystemRoute extends RouteBuilder {
 									break;
 								}
 							}
-							
-//							createdBy.setName("Fred");
-//							createdBy.setDomainName("mydomain");
 
 							Long lastModified = body.getFile().getLastModified();
 
@@ -162,15 +159,15 @@ public class FileSystemRoute extends RouteBuilder {
 								searchFile.setSize(length);
 								searchFile.setShare(share);
 
-								searchFile.setCreatedBy(createdBy);
-
-								searchFile = searchFileRepository.save(searchFile);
-
-								log.debug("saved searchFile:" + searchFile.toString());
+								if (searchFile != null)
+									createdBy.getSearchFiles().add(searchFile);
 
 							} else
 								log.info("File extension " + extension
 										+ " is not implemented, or there was no data found in the document.");
+
+							if (createdBy != null)
+								createdBy = searchUserRepository.save(createdBy);
 
 						}
 					})
@@ -280,8 +277,8 @@ public class FileSystemRoute extends RouteBuilder {
 	 * null) // powerShell.close(); // }
 	 */
 
-	public SearchFileRestRepository geteDiscoveryDocumentRepository() {
-		return searchFileRepository;
+	public SearchUserRestRepository geteDiscoveryDocumentRepository() {
+		return searchUserRepository;
 	}
 
 	// START SNIPPET: e1
