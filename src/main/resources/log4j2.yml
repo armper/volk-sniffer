@@ -40,7 +40,7 @@ Configutation:
           - ref: Console_Appender
 
       Logger:
-        - name: com.PereaTechnologies.CamelExchange.CamelExchangeMain
+        - name: com.pereatech.volk.sniffer
           additivity: false
           level: debug
           AppenderRef:

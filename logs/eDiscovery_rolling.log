@@ -1,0 +1,3 @@
+[DEBUG] 2018-05-14 00:06:31.408 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension is docx
+[DEBUG] 2018-05-14 00:06:31.417 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - SearchUser(id=null, name=Administrators, domainName=BUILTIN, searchFiles=[])
+[INFO ] 2018-05-14 00:06:31.419 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.

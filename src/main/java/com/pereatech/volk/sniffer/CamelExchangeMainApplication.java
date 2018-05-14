@@ -1,14 +1,13 @@
 package com.pereatech.volk.sniffer;
 
+import java.io.File;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.client.RestTemplate;
 
 import com.pereatech.volk.sniffer.filters.OfficeDocumentFilter;
-
-import jcifs.smb.SmbFile;
 
 @SpringBootApplication
 public class CamelExchangeMainApplication{
@@ -18,12 +17,7 @@ public class CamelExchangeMainApplication{
 	}
 
 	@Bean(name="officeDocumentFilter")
-	public OfficeDocumentFilter<SmbFile> OfficeDocumentFilter() {
-		return new OfficeDocumentFilter<SmbFile>();
-	}
-	
-	@Bean
-	public RestTemplate restTemplate(RestTemplateBuilder builder) {
-		return builder.build();
+	public OfficeDocumentFilter<File> OfficeDocumentFilter() {
+		return new OfficeDocumentFilter<File>();
 	}
 }
