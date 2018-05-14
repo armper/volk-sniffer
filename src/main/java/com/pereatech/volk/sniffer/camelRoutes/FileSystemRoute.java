@@ -44,13 +44,11 @@ import lombok.extern.log4j.Log4j2;
 @Component
 public class FileSystemRoute extends RouteBuilder {
 	private final SearchUserRepository searchUserRepository;
-	private final SearchFileRepository searchFileRepository;
 
 	@Autowired
-	public FileSystemRoute(SearchUserRepository searchUserRepository, SearchFileRepository searchFileRepository) {
+	public FileSystemRoute(SearchUserRepository searchUserRepository) {
 		super();
 		this.searchUserRepository = searchUserRepository;
-		this.searchFileRepository = searchFileRepository;
 	}
 
 	@Override
@@ -88,6 +86,13 @@ public class FileSystemRoute extends RouteBuilder {
 
 					createdBy.setName(StringUtils.substringAfter(Files.getOwner(path).getName(), "\\"));
 
+					SearchUser findOneByNameAndDomainName = searchUserRepository
+							.findOneByNameAndDomainName(createdBy.getName(), createdBy.getDomainName());
+					if (findOneByNameAndDomainName == null)
+						createdBy = searchUserRepository.save(createdBy);
+					else
+						createdBy = findOneByNameAndDomainName;
+
 					log.debug(createdBy);
 
 					BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
@@ -118,27 +123,20 @@ public class FileSystemRoute extends RouteBuilder {
 						searchFile = msOfficeExtractor.getFromOffice2003(is);
 					}
 
-					if (searchFile != null) {
+					if (searchFile == null)
+						searchFile = new SearchFile();
 
-						searchFile.setFileName(fileName);
-						searchFile.setExtension(extension);
-						searchFile.setPath(absolutePath);
-						searchFile.setServer(server);
-						searchFile.setLastModified(lastModified);
-						searchFile.setSize(length);
-						searchFile.setCreatedDateTime(creationTime);
+					searchFile.setFileName(fileName);
+					searchFile.setExtension(extension);
+					searchFile.setPath(absolutePath);
+					searchFile.setServer(server);
+					searchFile.setLastModified(lastModified);
+					searchFile.setSize(length);
+					searchFile.setCreatedDateTime(creationTime);
 
-						if (searchFile != null) {
-							searchFile = searchFileRepository.save(searchFile);
-							createdBy.getSearchFiles().add(searchFile);
-						}
-
-					} else
-						log.info("File extension " + extension
-								+ " is not implemented, or there was no data found in the document.");
-
-					if (createdBy != null)
-						createdBy = searchUserRepository.save(createdBy);
+					createdBy.getSearchFiles().add(searchFile);
+					
+					createdBy = searchUserRepository.save(createdBy);
 
 					log.debug(searchUserRepository.findOneById(createdBy.getId()));
 

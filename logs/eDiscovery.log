@@ -1216,3 +1216,41 @@
 [INFO ] 2018-05-14 00:06:00.288 [main] CamelExchangeMainApplication - Started CamelExchangeMainApplication in 4.011 seconds (JVM running for 7.652)
 [INFO ] 2018-05-14 00:06:01.340 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
 [INFO ] 2018-05-14 00:06:31.419 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:06.042 [main] CamelExchangeMainApplication - Starting CamelExchangeMainApplication on kiva10442 with PID 2056 (C:\Users\aperea\Documents\volk\sniffer\target\classes started by aperea in C:\Users\aperea\Documents\volk\sniffer)
+[INFO ] 2018-05-14 00:13:06.048 [main] CamelExchangeMainApplication - The following profiles are active: local
+[INFO ] 2018-05-14 00:13:09.502 [main] CamelExchangeMainApplication - Started CamelExchangeMainApplication in 3.902 seconds (JVM running for 7.424)
+[INFO ] 2018-05-14 00:13:10.573 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:10.769 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:10.794 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension pdf is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:10.819 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension txt is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:10.937 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:38.582 [main] CamelExchangeMainApplication - Starting CamelExchangeMainApplication on kiva10442 with PID 8676 (C:\Users\aperea\Documents\volk\sniffer\target\classes started by aperea in C:\Users\aperea\Documents\volk\sniffer)
+[INFO ] 2018-05-14 00:13:38.614 [main] CamelExchangeMainApplication - The following profiles are active: local
+[INFO ] 2018-05-14 00:13:41.782 [main] CamelExchangeMainApplication - Started CamelExchangeMainApplication in 3.599 seconds (JVM running for 6.783)
+[INFO ] 2018-05-14 00:13:42.832 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:42.958 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:43.102 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension pdf is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:43.127 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension txt is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:13:43.234 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:17:57.912 [main] CamelExchangeMainApplication - Starting CamelExchangeMainApplication on kiva10442 with PID 8456 (C:\Users\aperea\Documents\volk\sniffer\target\classes started by aperea in C:\Users\aperea\Documents\volk\sniffer)
+[INFO ] 2018-05-14 00:17:57.934 [main] CamelExchangeMainApplication - The following profiles are active: local
+[INFO ] 2018-05-14 00:18:01.085 [main] CamelExchangeMainApplication - Started CamelExchangeMainApplication in 3.575 seconds (JVM running for 6.744)
+[INFO ] 2018-05-14 00:18:02.135 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:18:02.237 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:18:02.269 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension pdf is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:18:02.302 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension txt is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:18:02.423 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:18:56.727 [main] CamelExchangeMainApplication - Starting CamelExchangeMainApplication on kiva10442 with PID 9376 (C:\Users\aperea\Documents\volk\sniffer\target\classes started by aperea in C:\Users\aperea\Documents\volk\sniffer)
+[INFO ] 2018-05-14 00:18:56.749 [main] CamelExchangeMainApplication - The following profiles are active: local
+[INFO ] 2018-05-14 00:18:59.809 [main] CamelExchangeMainApplication - Started CamelExchangeMainApplication in 3.475 seconds (JVM running for 6.629)
+[INFO ] 2018-05-14 00:19:00.861 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:19:00.996 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:19:01.030 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension pdf is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:19:01.063 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension txt is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:19:01.173 [Camel (camel-1) thread #2 - file://%5C%5CKIVA10442%5CTemp%5C] FileSystemRoute - File extension docx is not implemented, or there was no data found in the document.
+[INFO ] 2018-05-14 00:31:02.130 [main] CamelExchangeMainApplication - Starting CamelExchangeMainApplication on kiva10442 with PID 10060 (C:\Users\aperea\Documents\volk\sniffer\target\classes started by aperea in C:\Users\aperea\Documents\volk\sniffer)
+[INFO ] 2018-05-14 00:31:02.139 [main] CamelExchangeMainApplication - The following profiles are active: local
+[INFO ] 2018-05-14 00:31:06.060 [main] CamelExchangeMainApplication - Started CamelExchangeMainApplication in 4.581 seconds (JVM running for 10.27)
+[INFO ] 2018-05-14 00:34:45.498 [main] CamelExchangeMainApplication - Starting CamelExchangeMainApplication on kiva10442 with PID 8412 (C:\Users\aperea\Documents\volk\sniffer\target\classes started by aperea in C:\Users\aperea\Documents\volk\sniffer)
+[INFO ] 2018-05-14 00:34:45.531 [main] CamelExchangeMainApplication - The following profiles are active: local
+[INFO ] 2018-05-14 00:34:49.330 [main] CamelExchangeMainApplication - Started CamelExchangeMainApplication in 4.365 seconds (JVM running for 8.565)
