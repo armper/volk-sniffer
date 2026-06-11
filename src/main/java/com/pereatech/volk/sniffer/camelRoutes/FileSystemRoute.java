@@ -1,27 +1,30 @@
 package com.pereatech.volk.sniffer.camelRoutes;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.file.GenericFile;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.pereatech.volk.sniffer.model.SearchFile;
 import com.pereatech.volk.sniffer.model.SearchUser;
-import com.pereatech.volk.sniffer.repository.SearchUserRepository;
-import com.pereatech.volk.sniffer.service.MsOfficeExtractor;
+import com.pereatech.volk.sniffer.model.WatchFolder;
+import com.pereatech.volk.sniffer.service.TikaMetadataExtractor;
+import com.pereatech.volk.sniffer.service.FileAccessMetadataExtractor;
+import com.pereatech.volk.sniffer.service.VolkApiClient;
+import com.pereatech.volk.sniffer.service.WatchFolderStore;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,94 +32,137 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class FileSystemRoute extends RouteBuilder {
 
-	private static final Set<String> OLE2_TYPES = Set.of("doc", "xls", "ppt");
+	private final VolkApiClient volkApiClient;
 
-	private static final Set<String> OOXML_TYPES = Set.of("docx", "docm", "xlsx", "xlsm", "pptx", "pptm", "potm");
+	private final TikaMetadataExtractor metadataExtractor;
 
-	private final SearchUserRepository searchUserRepository;
+	private final FileAccessMetadataExtractor accessMetadataExtractor;
 
-	private final MsOfficeExtractor msOfficeExtractor = new MsOfficeExtractor();
+	private final WatchFolderStore watchFolderStore;
 
-	@Value("${volk.sniffer.directories}")
-	private List<String> directories;
-
-	@Value("${volk.sniffer.recursive:false}")
-	private boolean recursive;
-
-	public FileSystemRoute(SearchUserRepository searchUserRepository) {
-		this.searchUserRepository = searchUserRepository;
+	public FileSystemRoute(VolkApiClient volkApiClient, TikaMetadataExtractor metadataExtractor,
+			FileAccessMetadataExtractor accessMetadataExtractor, WatchFolderStore watchFolderStore) {
+		this.volkApiClient = volkApiClient;
+		this.metadataExtractor = metadataExtractor;
+		this.accessMetadataExtractor = accessMetadataExtractor;
+		this.watchFolderStore = watchFolderStore;
 	}
 
 	@Override
 	public void configure() {
-		directories.forEach(directory -> from(
-				"file:" + directory + "?noop=true&recursive=" + recursive + "&filter=#officeDocumentFilter")
-				.routeId("FileRoute[" + directory + "]")
-				.process(exchange -> ingest(exchange, directory)));
+		watchFolderStore.list().forEach(folder -> from(routeUri(folder))
+				.routeId(routeId(folder.path()))
+				.process(exchange -> ingest(exchange, folder.path())));
+	}
+
+	public synchronized WatchFolder addFolder(String directory, boolean recursive) throws Exception {
+		WatchFolder folder = watchFolderStore.validate(directory, recursive);
+		WatchFolder existing = watchFolderStore.find(folder.path()).orElse(null);
+
+		if (existing != null) {
+			if (existing.recursive() == recursive) {
+				return existing;
+			}
+			removeRoute(existing.path());
+		}
+
+		getContext().addRoutes(new RouteBuilder() {
+			@Override
+			public void configure() {
+				from(routeUri(folder))
+						.routeId(routeId(folder.path()))
+						.process(exchange -> ingest(exchange, folder.path()));
+			}
+		});
+		watchFolderStore.put(folder);
+		return folder;
+	}
+
+	public synchronized boolean removeFolder(String directory) throws Exception {
+		WatchFolder existing = watchFolderStore.find(directory).orElse(null);
+		if (existing == null) {
+			return false;
+		}
+		removeRoute(existing.path());
+		watchFolderStore.remove(existing.path());
+		return true;
+	}
+
+	private void removeRoute(String directory) throws Exception {
+		String routeId = routeId(directory);
+		if (getContext().getRoute(routeId) != null) {
+			getContext().getRouteController().stopRoute(routeId);
+			getContext().removeRoute(routeId);
+		}
+	}
+
+	public String routeStatus(String directory) {
+		var status = getContext().getRouteController().getRouteStatus(routeId(directory));
+		return status == null ? "Stopped" : status.name();
+	}
+
+	private String routeUri(WatchFolder folder) {
+		String pathUri = Path.of(folder.path()).toUri().toASCIIString().substring("file:".length());
+		return "file:" + pathUri
+				+ "?noop=true&recursive=" + folder.recursive()
+				+ "&filter=#indexedFileFilter"
+				+ "&idempotent=true&idempotentRepository=#fileIdempotentRepository"
+				+ "&idempotentKey=permissions-v1-${file:absolute.path}-${file:modified}";
+	}
+
+	private String routeId(String directory) {
+		UUID id = UUID.nameUUIDFromBytes(directory.getBytes(StandardCharsets.UTF_8));
+		return "FileRoute-" + id;
 	}
 
 	@SuppressWarnings("unchecked")
-	private void ingest(Exchange exchange, String directory) throws Exception {
+	private void ingest(Exchange exchange, String directory) throws IOException {
 		GenericFile<File> genericFile = (GenericFile<File>) exchange.getIn().getBody();
 		Path path = genericFile.getFile().toPath();
 
 		log.debug("Processing path: {}", path);
 
 		String fileName = path.getFileName().toString();
-		String extension = FilenameUtils.getExtension(fileName).toLowerCase();
 
-		SearchUser createdBy = resolveOwner(path);
+		SearchUser owner = volkApiClient.getOrCreateUser(resolveOwner(path));
 
 		BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
 
-		SearchFile searchFile = extractMetadata(path, extension);
+		SearchFile searchFile = new SearchFile();
+		extractMetadata(path, searchFile);
+		accessMetadataExtractor.extract(path, Path.of(directory), searchFile);
 
+		searchFile.setUserId(owner.getId());
 		searchFile.setFileName(fileName);
-		searchFile.setExtension(extension);
+		searchFile.setExtension(FilenameUtils.getExtension(fileName).toLowerCase());
 		searchFile.setPath(path.toAbsolutePath().toString());
 		searchFile.setServer(directory);
 		searchFile.setSize(attributes.size());
 		searchFile.setCreatedDateTime(LocalDateTime.ofInstant(attributes.creationTime().toInstant(), ZoneOffset.UTC));
 		searchFile.setLastModified(LocalDateTime.ofInstant(attributes.lastModifiedTime().toInstant(), ZoneOffset.UTC));
 
-		createdBy.getSearchFiles().add(searchFile);
-		createdBy = searchUserRepository.save(createdBy);
+		SearchFile saved = volkApiClient.saveFile(searchFile);
 
-		log.debug("Saved file {} for user {}", fileName, createdBy.getName());
+		log.debug("Ingested {} as {} for user {}", fileName, saved.getId(), owner.getName());
 	}
 
 	/**
-	 * Looks up (or creates) the SearchUser owning the file. Windows owners come
-	 * back as DOMAIN\name; POSIX owners have no domain part.
+	 * Windows owners come back as DOMAIN\name; POSIX owners have no domain part.
 	 */
-	private SearchUser resolveOwner(Path path) throws java.io.IOException {
+	private SearchUser resolveOwner(Path path) throws IOException {
 		String owner = Files.getOwner(path).getName();
 
 		String domainName = StringUtils.contains(owner, "\\") ? StringUtils.substringBefore(owner, "\\") : "";
 		String name = StringUtils.contains(owner, "\\") ? StringUtils.substringAfter(owner, "\\") : owner;
 
-		SearchUser existing = searchUserRepository.findOneByNameAndDomainName(name, domainName);
-		if (existing != null) {
-			return existing;
-		}
-
-		SearchUser createdBy = new SearchUser();
-		createdBy.setName(name);
-		createdBy.setDomainName(domainName);
-		return searchUserRepository.save(createdBy);
+		return new SearchUser(name, domainName);
 	}
 
-	private SearchFile extractMetadata(Path path, String extension) {
+	private void extractMetadata(Path path, SearchFile searchFile) {
 		try (InputStream is = Files.newInputStream(path)) {
-			if (OLE2_TYPES.contains(extension)) {
-				return msOfficeExtractor.getFromOle2(is);
-			}
-			if (OOXML_TYPES.contains(extension)) {
-				return msOfficeExtractor.getFromOoxml(is);
-			}
+			metadataExtractor.extract(is, searchFile);
 		} catch (Exception e) {
-			log.warn("Could not extract Office metadata from {}: {}", path, e.getMessage());
+			log.warn("Could not extract metadata from {}: {}", path, e.getMessage());
 		}
-		return new SearchFile();
 	}
 }

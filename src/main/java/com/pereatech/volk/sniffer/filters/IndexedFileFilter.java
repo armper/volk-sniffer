@@ -7,10 +7,14 @@ import org.apache.camel.component.file.GenericFileFilter;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 
-public class OfficeDocumentFilter<T> implements GenericFileFilter<T> {
+/**
+ * Accepts only the file extensions configured under
+ * {@code volk.sniffer.file-types}, and skips MS Office lock files.
+ */
+public class IndexedFileFilter<T> implements GenericFileFilter<T> {
 
-	@Value("${file-types.office-document}")
-	private String[] officeDocumentTypes;
+	@Value("${volk.sniffer.file-types}")
+	private String[] fileTypes;
 
 	@Override
 	public boolean accept(GenericFile<T> file) {
@@ -25,6 +29,6 @@ public class OfficeDocumentFilter<T> implements GenericFileFilter<T> {
 		}
 
 		String extension = FilenameUtils.getExtension(fileName);
-		return Arrays.stream(officeDocumentTypes).anyMatch(type -> type.equalsIgnoreCase(extension));
+		return Arrays.stream(fileTypes).anyMatch(type -> type.equalsIgnoreCase(extension));
 	}
 }

@@ -1,6 +1,8 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
 logs/
+data/watch-folders.json
+data/idempotent-store.dat
 
 ### Eclipse / STS ###
 .apt_generated

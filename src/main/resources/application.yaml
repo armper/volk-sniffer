@@ -1,17 +1,27 @@
-spring:
-  profiles:
-    active: local
-
 camel:
   main:
     run-controller: true
 
-volk:
-  sniffer:
-    # Comma-separated list of directories to crawl. Override with the
-    # VOLK_SNIFFER_DIRECTORIES environment variable.
-    directories: ${VOLK_SNIFFER_DIRECTORIES:/tmp/volk-inbox}
-    recursive: false
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8092}
 
-file-types:
-  office-document: doc, docx, docm, xls, xlsm, xlsx, potm, ppt, pptx, pptm, csv
+volk:
+  cors:
+    allowed-origins: ${VOLK_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  api:
+    # Base URL of the volk-rest API that ingested data is POSTed to.
+    base-url: ${VOLK_API_BASE_URL:http://localhost:8091}
+    # Sent as X-API-Key when volk-rest has volk.security.api-key set.
+    key: ${VOLK_API_KEY:}
+  sniffer:
+    # Comma-separated list of directories to crawl.
+    directories: ${VOLK_SNIFFER_DIRECTORIES:/tmp/volk-inbox}
+    recursive: ${VOLK_SNIFFER_RECURSIVE:false}
+    # Comma-separated extensions to index.
+    file-types: doc, docx, docm, xls, xlsm, xlsx, potm, ppt, pptx, pptm, csv, pdf, txt
+    # Persistent idempotent store - crawled files are not re-ingested
+    # across restarts.
+    idempotent-store: ${VOLK_SNIFFER_IDEMPOTENT_STORE:data/idempotent-store.dat}
+    # Folders selected in the UI survive sniffer restarts.
+    watch-folders-store: ${VOLK_WATCH_FOLDERS_STORE:data/watch-folders.json}

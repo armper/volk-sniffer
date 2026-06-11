@@ -1,30 +1,43 @@
 package com.pereatech.volk.sniffer.model;
 
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.springframework.data.annotation.Id;
-
-import java.time.LocalDateTime;
 
 @Data
-@RequiredArgsConstructor
-@Document
-@ToString
+@NoArgsConstructor
+@ToString(exclude = "content")
 @EqualsAndHashCode(of = { "fileName", "path", "server" })
 public class SearchFile {
 
-	@Id
-	protected String id;
+	private String id;
 
-	protected Long size;
+	/** Owning SearchUser, assigned by volk-rest. */
+	private String userId;
 
-	protected LocalDateTime createdDateTime, lastModified;
+	private Long size;
 
-	protected String fileName, path, extension, server, share;
+	private LocalDateTime createdDateTime, lastModified;
+
+	private String fileName, path, extension, server, share;
+
+	/** Document metadata extracted by Tika. */
+	private String title, author, keywords, comments, contentType;
+
+	/** Filesystem access metadata used by volk-rest to filter results. */
+	private String fileOwner, fileGroup, posixPermissions, accessControlSource, indexerUser;
+
+	private boolean ownerReadable, groupReadable, othersReadable, indexerReadable;
+
+	private List<String> allowedPrincipals = new ArrayList<>();
+
+	private List<String> deniedPrincipals = new ArrayList<>();
+
+	/** Extracted text content (capped), powers full-text search. */
+	private String content;
 }
