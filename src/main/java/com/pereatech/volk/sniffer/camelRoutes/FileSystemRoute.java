@@ -3,145 +3,120 @@ package com.pereatech.volk.sniffer.camelRoutes;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileOwnerAttributeView;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.UserPrincipal;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.file.GenericFile;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.pereatech.volk.sniffer.model.SearchFile;
 import com.pereatech.volk.sniffer.model.SearchUser;
-import com.pereatech.volk.sniffer.repository.SearchFileRepository;
 import com.pereatech.volk.sniffer.repository.SearchUserRepository;
 import com.pereatech.volk.sniffer.service.MsOfficeExtractor;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 @Component
 public class FileSystemRoute extends RouteBuilder {
+
+	private static final Set<String> OLE2_TYPES = Set.of("doc", "xls", "ppt");
+
+	private static final Set<String> OOXML_TYPES = Set.of("docx", "docm", "xlsx", "xlsm", "pptx", "pptm", "potm");
+
 	private final SearchUserRepository searchUserRepository;
 
-	@Autowired
+	private final MsOfficeExtractor msOfficeExtractor = new MsOfficeExtractor();
+
+	@Value("${volk.sniffer.directories}")
+	private List<String> directories;
+
+	@Value("${volk.sniffer.recursive:false}")
+	private boolean recursive;
+
 	public FileSystemRoute(SearchUserRepository searchUserRepository) {
-		super();
 		this.searchUserRepository = searchUserRepository;
 	}
 
 	@Override
-	public void configure() throws Exception {
+	public void configure() {
+		directories.forEach(directory -> from(
+				"file:" + directory + "?noop=true&recursive=" + recursive + "&filter=#officeDocumentFilter")
+				.routeId("FileRoute[" + directory + "]")
+				.process(exchange -> ingest(exchange, directory)));
+	}
 
-		List<String> servers = new ArrayList<>();
-		servers.add("\\\\KIVA10442\\Temp\\");
+	@SuppressWarnings("unchecked")
+	private void ingest(Exchange exchange, String directory) throws Exception {
+		GenericFile<File> genericFile = (GenericFile<File>) exchange.getIn().getBody();
+		Path path = genericFile.getFile().toPath();
 
-		servers.stream().forEach(server -> {
+		log.debug("Processing path: {}", path);
 
-			String routeId = UUID.randomUUID().toString();
+		String fileName = path.getFileName().toString();
+		String extension = FilenameUtils.getExtension(fileName).toLowerCase();
 
-			String arguments = "?noop=true";
+		SearchUser createdBy = resolveOwner(path);
 
-			from("file://" + server + arguments).routeId("FileRoute" + routeId).process(new Processor() {
+		BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
 
-				public void process(Exchange exchange) throws Exception {
+		SearchFile searchFile = extractMetadata(path, extension);
 
-					GenericFile<File> genericFile = (GenericFile<File>) exchange.getIn().getBody();
+		searchFile.setFileName(fileName);
+		searchFile.setExtension(extension);
+		searchFile.setPath(path.toAbsolutePath().toString());
+		searchFile.setServer(directory);
+		searchFile.setSize(attributes.size());
+		searchFile.setCreatedDateTime(LocalDateTime.ofInstant(attributes.creationTime().toInstant(), ZoneOffset.UTC));
+		searchFile.setLastModified(LocalDateTime.ofInstant(attributes.lastModifiedTime().toInstant(), ZoneOffset.UTC));
 
-					String absolutePath = genericFile.getFile().getAbsolutePath();
+		createdBy.getSearchFiles().add(searchFile);
+		createdBy = searchUserRepository.save(createdBy);
 
-					log.debug("Processing path: " + absolutePath);
+		log.debug("Saved file {} for user {}", fileName, createdBy.getName());
+	}
 
-					Path path = Paths.get(absolutePath);
+	/**
+	 * Looks up (or creates) the SearchUser owning the file. Windows owners come
+	 * back as DOMAIN\name; POSIX owners have no domain part.
+	 */
+	private SearchUser resolveOwner(Path path) throws java.io.IOException {
+		String owner = Files.getOwner(path).getName();
 
-					String fileName = path.getFileName().toString();
-					log.debug("File name is " + fileName);
+		String domainName = StringUtils.contains(owner, "\\") ? StringUtils.substringBefore(owner, "\\") : "";
+		String name = StringUtils.contains(owner, "\\") ? StringUtils.substringAfter(owner, "\\") : owner;
 
-					String extension = FilenameUtils.getExtension(fileName);
-					log.debug("File extension is " + extension);
+		SearchUser existing = searchUserRepository.findOneByNameAndDomainName(name, domainName);
+		if (existing != null) {
+			return existing;
+		}
 
-					SearchUser createdBy = new SearchUser();
-					createdBy.setDomainName(StringUtils.substringBefore(Files.getOwner(path).getName(), "\\"));
+		SearchUser createdBy = new SearchUser();
+		createdBy.setName(name);
+		createdBy.setDomainName(domainName);
+		return searchUserRepository.save(createdBy);
+	}
 
-					createdBy.setName(StringUtils.substringAfter(Files.getOwner(path).getName(), "\\"));
-
-					SearchUser findOneByNameAndDomainName = searchUserRepository
-							.findOneByNameAndDomainName(createdBy.getName(), createdBy.getDomainName());
-					if (findOneByNameAndDomainName == null)
-						createdBy = searchUserRepository.save(createdBy);
-					else
-						createdBy = findOneByNameAndDomainName;
-
-					log.debug(createdBy);
-
-					BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
-
-					LocalDateTime lastModified = LocalDateTime.ofInstant(attributes.lastModifiedTime().toInstant(),
-							ZoneOffset.UTC);
-					LocalDateTime lastAccessed = LocalDateTime.ofInstant(attributes.lastAccessTime().toInstant(),
-							ZoneOffset.UTC);
-
-					LocalDateTime creationTime = LocalDateTime.ofInstant(attributes.creationTime().toInstant(),
-							ZoneOffset.UTC);
-
-					Long length = attributes.size();
-
-					SearchFile searchFile = null;
-
-					MsOfficeExtractor msOfficeExtractor = new MsOfficeExtractor();
-
-					// get byte array of any MS office document
-					InputStream is = Files.newInputStream(path);
-
-					Collection<String> office97Types = Arrays.asList("doc", "xls", "ppt");
-					Collection<String> office2003Types = Arrays.asList("docx", "xlsx", "pptx");
-
-					if (office97Types.contains(extension)) {
-						searchFile = msOfficeExtractor.getFromOffice97(is);
-					} else if (extension.equals("xlsx")) {
-						searchFile = msOfficeExtractor.getFromOffice2003(is);
-					}
-
-					if (searchFile == null)
-						searchFile = new SearchFile();
-
-					searchFile.setFileName(fileName);
-					searchFile.setExtension(extension);
-					searchFile.setPath(absolutePath);
-					searchFile.setServer(server);
-					searchFile.setLastModified(lastModified);
-					searchFile.setSize(length);
-					searchFile.setCreatedDateTime(creationTime);
-
-					createdBy.getSearchFiles().add(searchFile);
-					
-					createdBy = searchUserRepository.save(createdBy);
-
-					log.debug(searchUserRepository.findOneById(createdBy.getId()));
-
-				}
-			});
-		});
+	private SearchFile extractMetadata(Path path, String extension) {
+		try (InputStream is = Files.newInputStream(path)) {
+			if (OLE2_TYPES.contains(extension)) {
+				return msOfficeExtractor.getFromOle2(is);
+			}
+			if (OOXML_TYPES.contains(extension)) {
+				return msOfficeExtractor.getFromOoxml(is);
+			}
+		} catch (Exception e) {
+			log.warn("Could not extract Office metadata from {}: {}", path, e.getMessage());
+		}
+		return new SearchFile();
 	}
 }

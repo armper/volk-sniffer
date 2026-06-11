@@ -1,20 +1,17 @@
-server: 
-  port: 8069
-
 spring:
-    profiles:
-     active: local
-     
-camel:
-  springboot: 
-    main-run-controller: true
-   
-#application properties
+  profiles:
+    active: local
 
-route:
-  recursive: false
-  fileTypeFilter: officeDocumentFilter
- 
+camel:
+  main:
+    run-controller: true
+
+volk:
+  sniffer:
+    # Comma-separated list of directories to crawl. Override with the
+    # VOLK_SNIFFER_DIRECTORIES environment variable.
+    directories: ${VOLK_SNIFFER_DIRECTORIES:/tmp/volk-inbox}
+    recursive: false
+
 file-types:
-  office-document: doc, docx, docm, xls, xlsm, xlsx, potm, ppt, pptx, csv
-  video: mp4, mov, vob
+  office-document: doc, docx, docm, xls, xlsm, xlsx, potm, ppt, pptx, pptm, csv
