@@ -23,6 +23,7 @@ import com.pereatech.volk.sniffer.model.SearchUser;
 import com.pereatech.volk.sniffer.model.WatchFolder;
 import com.pereatech.volk.sniffer.service.TikaMetadataExtractor;
 import com.pereatech.volk.sniffer.service.FileAccessMetadataExtractor;
+import com.pereatech.volk.sniffer.service.DocumentProvenanceExtractor;
 import com.pereatech.volk.sniffer.service.VolkApiClient;
 import com.pereatech.volk.sniffer.service.WatchFolderStore;
 
@@ -38,13 +39,17 @@ public class FileSystemRoute extends RouteBuilder {
 
 	private final FileAccessMetadataExtractor accessMetadataExtractor;
 
+	private final DocumentProvenanceExtractor provenanceExtractor;
+
 	private final WatchFolderStore watchFolderStore;
 
 	public FileSystemRoute(VolkApiClient volkApiClient, TikaMetadataExtractor metadataExtractor,
-			FileAccessMetadataExtractor accessMetadataExtractor, WatchFolderStore watchFolderStore) {
+			FileAccessMetadataExtractor accessMetadataExtractor, DocumentProvenanceExtractor provenanceExtractor,
+			WatchFolderStore watchFolderStore) {
 		this.volkApiClient = volkApiClient;
 		this.metadataExtractor = metadataExtractor;
 		this.accessMetadataExtractor = accessMetadataExtractor;
+		this.provenanceExtractor = provenanceExtractor;
 		this.watchFolderStore = watchFolderStore;
 	}
 
@@ -52,15 +57,17 @@ public class FileSystemRoute extends RouteBuilder {
 	public void configure() {
 		watchFolderStore.list().forEach(folder -> from(routeUri(folder))
 				.routeId(routeId(folder.path()))
-				.process(exchange -> ingest(exchange, folder.path())));
+				.process(exchange -> ingest(exchange, folder)));
 	}
 
-	public synchronized WatchFolder addFolder(String directory, boolean recursive) throws Exception {
-		WatchFolder folder = watchFolderStore.validate(directory, recursive);
+	public synchronized WatchFolder addFolder(String directory, boolean recursive, String sourceName, String sourceType,
+			String department, String sourceOwner) throws Exception {
+		WatchFolder folder = watchFolderStore.validate(directory, recursive, sourceName, sourceType, department,
+				sourceOwner);
 		WatchFolder existing = watchFolderStore.find(folder.path()).orElse(null);
 
 		if (existing != null) {
-			if (existing.recursive() == recursive) {
+			if (existing.equals(folder)) {
 				return existing;
 			}
 			removeRoute(existing.path());
@@ -71,7 +78,7 @@ public class FileSystemRoute extends RouteBuilder {
 			public void configure() {
 				from(routeUri(folder))
 						.routeId(routeId(folder.path()))
-						.process(exchange -> ingest(exchange, folder.path()));
+						.process(exchange -> ingest(exchange, folder));
 			}
 		});
 		watchFolderStore.put(folder);
@@ -103,11 +110,13 @@ public class FileSystemRoute extends RouteBuilder {
 
 	private String routeUri(WatchFolder folder) {
 		String pathUri = Path.of(folder.path()).toUri().toASCIIString().substring("file:".length());
+		String profileVersion = Integer.toUnsignedString(folder.hashCode(), 16);
 		return "file:" + pathUri
 				+ "?noop=true&recursive=" + folder.recursive()
 				+ "&filter=#indexedFileFilter"
 				+ "&idempotent=true&idempotentRepository=#fileIdempotentRepository"
-				+ "&idempotentKey=permissions-v1-${file:absolute.path}-${file:modified}";
+				+ "&idempotentKey=provenance-v1-" + profileVersion
+				+ "-${file:absolute.path}-${file:modified}";
 	}
 
 	private String routeId(String directory) {
@@ -116,7 +125,7 @@ public class FileSystemRoute extends RouteBuilder {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void ingest(Exchange exchange, String directory) throws IOException {
+	private void ingest(Exchange exchange, WatchFolder source) throws IOException {
 		GenericFile<File> genericFile = (GenericFile<File>) exchange.getIn().getBody();
 		Path path = genericFile.getFile().toPath();
 
@@ -130,13 +139,14 @@ public class FileSystemRoute extends RouteBuilder {
 
 		SearchFile searchFile = new SearchFile();
 		extractMetadata(path, searchFile);
-		accessMetadataExtractor.extract(path, Path.of(directory), searchFile);
+		accessMetadataExtractor.extract(path, Path.of(source.path()), searchFile);
+		provenanceExtractor.extract(path, source, searchFile);
 
 		searchFile.setUserId(owner.getId());
 		searchFile.setFileName(fileName);
 		searchFile.setExtension(FilenameUtils.getExtension(fileName).toLowerCase());
 		searchFile.setPath(path.toAbsolutePath().toString());
-		searchFile.setServer(directory);
+		searchFile.setServer(source.path());
 		searchFile.setSize(attributes.size());
 		searchFile.setCreatedDateTime(LocalDateTime.ofInstant(attributes.creationTime().toInstant(), ZoneOffset.UTC));
 		searchFile.setLastModified(LocalDateTime.ofInstant(attributes.lastModifiedTime().toInstant(), ZoneOffset.UTC));

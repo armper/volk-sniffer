@@ -38,16 +38,16 @@ public class WatchFolderController {
 	@GetMapping
 	public List<WatchFolderStatus> list() {
 		return watchFolderStore.list().stream()
-				.map(folder -> new WatchFolderStatus(folder.path(), folder.recursive(),
-						fileSystemRoute.routeStatus(folder.path())))
+				.map(this::status)
 				.toList();
 	}
 
 	@PostMapping
 	public WatchFolderStatus add(@RequestBody WatchFolderRequest request) {
 		try {
-			WatchFolder folder = fileSystemRoute.addFolder(request.path(), request.recursive());
-			return new WatchFolderStatus(folder.path(), folder.recursive(), fileSystemRoute.routeStatus(folder.path()));
+			WatchFolder folder = fileSystemRoute.addFolder(request.path(), request.recursive(), request.sourceName(),
+					request.sourceType(), request.department(), request.sourceOwner());
+			return status(folder);
 		} catch (IllegalArgumentException e) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
 		} catch (Exception e) {
@@ -104,9 +104,17 @@ public class WatchFolderController {
 		}
 	}
 
-	public record WatchFolderRequest(String path, boolean recursive) { }
+	private WatchFolderStatus status(WatchFolder folder) {
+		return new WatchFolderStatus(folder.path(), folder.recursive(), folder.sourceId(), folder.sourceName(),
+				folder.sourceType(), folder.department(), folder.sourceOwner(),
+				fileSystemRoute.routeStatus(folder.path()));
+	}
 
-	public record WatchFolderStatus(String path, boolean recursive, String status) { }
+	public record WatchFolderRequest(String path, boolean recursive, String sourceName, String sourceType,
+			String department, String sourceOwner) { }
+
+	public record WatchFolderStatus(String path, boolean recursive, String sourceId, String sourceName,
+			String sourceType, String department, String sourceOwner, String status) { }
 
 	public record DirectoryEntry(String name, String path) { }
 

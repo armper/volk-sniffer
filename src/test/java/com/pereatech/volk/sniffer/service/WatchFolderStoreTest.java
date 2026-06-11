@@ -26,12 +26,18 @@ class WatchFolderStoreTest {
 
 		WatchFolderStore first = new WatchFolderStore(new ObjectMapper(), List.of(watched.toString()), false,
 				store.toString());
-		first.put(first.validate(added.toString(), true));
+		first.put(first.validate(added.toString(), true, "Case files", "SHARED_DRIVE", "Legal", "Records team"));
 		first.remove(watched.toString());
 
 		WatchFolderStore reloaded = new WatchFolderStore(new ObjectMapper(), List.of(), false, store.toString());
 
-		assertThat(reloaded.list()).containsExactly(new WatchFolder(added.toRealPath().toString(), true));
+		WatchFolder folder = reloaded.list().get(0);
+		assertThat(folder.path()).isEqualTo(added.toRealPath().toString());
+		assertThat(folder.sourceName()).isEqualTo("Case files");
+		assertThat(folder.sourceType()).isEqualTo("SHARED_DRIVE");
+		assertThat(folder.department()).isEqualTo("Legal");
+		assertThat(folder.sourceOwner()).isEqualTo("Records team");
+		assertThat(folder.sourceId()).isNotBlank();
 	}
 
 	@Test
@@ -45,5 +51,22 @@ class WatchFolderStoreTest {
 				temporaryDirectory.resolve("aliases.json").toString());
 
 		assertThat(store.find(realFolder.toString())).isPresent();
+	}
+
+	@Test
+	void migratesLegacyFolderRecordsWithUsefulDefaults() throws Exception {
+		Path legacyFolder = temporaryDirectory.resolve("legacy");
+		java.nio.file.Files.createDirectories(legacyFolder);
+		Path storeFile = temporaryDirectory.resolve("legacy-folders.json");
+		java.nio.file.Files.writeString(storeFile,
+				"[{\"path\":\"" + legacyFolder + "\",\"recursive\":true}]");
+
+		WatchFolderStore store = new WatchFolderStore(new ObjectMapper(), List.of(), false, storeFile.toString());
+		WatchFolder migrated = store.list().get(0);
+
+		assertThat(migrated.sourceName()).isEqualTo("legacy");
+		assertThat(migrated.sourceType()).isEqualTo("LOCAL_FOLDER");
+		assertThat(migrated.sourceId()).isNotBlank();
+		assertThat(migrated.department()).isEmpty();
 	}
 }

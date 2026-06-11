@@ -29,6 +29,11 @@ public class SearchFile {
 	/** Document metadata extracted by Tika. */
 	private String title, author, keywords, comments, contentType;
 
+	/** Human and system provenance inherited from the watched source. */
+	private String sourceId, sourceName, sourceType, sourceRoot, relativePath;
+
+	private String contentOwner, ownershipBasis, department, accessContextRoot, sourceAccessSummary;
+
 	/** Filesystem access metadata used by volk-rest to filter results. */
 	private String fileOwner, fileGroup, posixPermissions, accessControlSource, indexerUser;
 
