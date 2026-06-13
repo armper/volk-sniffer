@@ -19,7 +19,7 @@ volk:
     directories: ${VOLK_SNIFFER_DIRECTORIES:/tmp/volk-inbox}
     recursive: ${VOLK_SNIFFER_RECURSIVE:false}
     # Comma-separated extensions to index.
-    file-types: doc, docx, docm, xls, xlsm, xlsx, potm, ppt, pptx, pptm, csv, pdf, txt
+    file-types: doc, docx, docm, xls, xlsm, xlsx, potm, ppt, pptx, pptm, csv, pdf, txt, png, jpg, jpeg, gif, bmp, tif, tiff, webp
     # Persistent idempotent store - crawled files are not re-ingested
     # across restarts.
     idempotent-store: ${VOLK_SNIFFER_IDEMPOTENT_STORE:data/idempotent-store.dat}

@@ -9,6 +9,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
@@ -31,9 +32,13 @@ public class TikaMetadataExtractor {
 	public void extract(InputStream is, SearchFile target) throws IOException, SAXException, TikaException {
 		BodyContentHandler handler = new BodyContentHandler(MAX_CONTENT_CHARS);
 		Metadata metadata = new Metadata();
+		ParseContext context = new ParseContext();
+		TesseractOCRConfig ocrConfig = new TesseractOCRConfig();
+		ocrConfig.setSkipOcr(true);
+		context.set(TesseractOCRConfig.class, ocrConfig);
 
 		try {
-			parser.parse(is, handler, metadata, new ParseContext());
+			parser.parse(is, handler, metadata, context);
 		} catch (WriteLimitReachedException e) {
 			// content was truncated at MAX_CONTENT_CHARS - keep what we have
 		}

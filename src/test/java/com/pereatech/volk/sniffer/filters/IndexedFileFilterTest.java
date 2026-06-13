@@ -15,13 +15,15 @@ class IndexedFileFilterTest {
 
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(filter, "fileTypes", new String[] { "docx", "pdf", "txt" });
+		ReflectionTestUtils.setField(filter, "fileTypes", new String[] { "docx", "pdf", "txt", "png", "jpg" });
 	}
 
 	@Test
 	void acceptsConfiguredExtensions() {
 		assertThat(filter.accept(file("report.docx"))).isTrue();
 		assertThat(filter.accept(file("REPORT.PDF"))).isTrue();
+		assertThat(filter.accept(file("scan.png"))).isTrue();
+		assertThat(filter.accept(file("PHOTO.JPG"))).isTrue();
 	}
 
 	@Test
